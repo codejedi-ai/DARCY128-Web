@@ -61,7 +61,7 @@ export default function Home() {
             >
               <div className='flex flex-col items-center gap-8'>
                 Perceptr
-                <Link href="/api/auth/login?prompt=login">
+                <Link href="/auth/login">
                   <Button 
                     variant="outline" 
                     size="lg"
