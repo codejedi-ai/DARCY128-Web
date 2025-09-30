@@ -1,44 +1,10 @@
-import { useEffect, useState } from 'react';
-import { useUser } from '@auth0/nextjs-auth0/client';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export function useCheckUser() {
-  const { user, isLoading: authLoading } = useUser();
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading] = useState(false);
 
-  useEffect(() => {
-    const checkUser = async () => {
-      if (!user) return;
-
-      try {
-        const response = await fetch(`/api/check-user?userId=${user.sub}`);
-        const data = await response.json();
-
-        const currentPath = window.location.pathname;
-        
-        if (!data.exists) {
-          // If user doesn't exist in database and not already on survey page
-          if (currentPath !== '/survey') {
-            router.push('/survey');
-          }
-        } else {
-          // If user exists and trying to access survey
-          if (currentPath === '/survey') {
-            router.push('/home');
-          }
-        }
-      } catch (error) {
-        console.error('Error checking user:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (!authLoading) {
-      checkUser();
-    }
-  }, [user, authLoading, router]);
-
-  return { isLoading: isLoading || authLoading };
+  // Since we no longer have Auth0, this hook simply returns not loading
+  // In a real implementation, you might want to check for some other form of authentication
+  
+  return { isLoading };
 }

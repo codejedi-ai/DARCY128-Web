@@ -2,8 +2,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from "@/components/ui/button";
-import { useUser } from "@auth0/nextjs-auth0/client";
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 
@@ -18,25 +16,16 @@ const smoothTransition = {
 }
 
 export default function Home() {
-  const { user, error } = useUser();
   const [stage, setStage] = useState(0);
-  const router = useRouter();
 
   useEffect(() => {
-    if (user) {
-      router.push('/survey');
-      return;
-    }
-
     const timer1 = setTimeout(() => setStage(1), 2000)
     const timer2 = setTimeout(() => setStage(2), 4000)
     return () => {
       clearTimeout(timer1)
       clearTimeout(timer2)
     }
-  }, [user, router]);
-
-  if (error) return <div>{error.message}</div>;
+  }, []);
 
   return (
     <DynamicVantaBackground>

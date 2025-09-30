@@ -1,12 +1,8 @@
 'use client';
 
-import { useUser } from '@auth0/nextjs-auth0/client';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
-import { useCheckUser } from '../hooks/useCheckUser';
-import LoadingScreen from '../components/loadingScreen';
 
 const questions = [
   {
@@ -21,12 +17,12 @@ const questions = [
   },
   {
     id: 3,
-    question: "What hobbies, interests, or passions do you have that influence how you see the world?",
+    question: "What unique perspectives do you bring?",
     maxWords: 500
   },
   {
     id: 4,
-    question: "Have you ever had an experience that changed the way you view life or people around you?",
+    question: "What drives you to do what you do?",
     maxWords: 500
   },
   {
@@ -37,85 +33,21 @@ const questions = [
 ];
 
 export default function ProfilePage() {
-    const { isLoading: checkUserLoading } = useCheckUser();
-    const { user, error, isLoading: authLoading } = useUser();
     const router = useRouter();
     const [isEditing, setIsEditing] = useState(false);
     const [answers, setAnswers] = useState<{ [key: number]: string }>({
-        // This should be populated with actual answers from your database
-        1: "Previous answer 1",
-        2: "Previous answer 2",
-        3: "Previous answer 3",
-        4: "Previous answer 4",
-        5: "Previous answer 5",
+        1: "Sample answer 1",
+        2: "Sample answer 2", 
+        3: "Sample answer 3",
+        4: "Sample answer 4",
+        5: "Sample answer 5",
     });
     const [editedAnswers, setEditedAnswers] = useState<{ [key: number]: string }>(answers);
     const [socialInfo, setSocialInfo] = useState({
-        instagram: "your.username", // Default or from database
-        discord: "username#1234"    // Default or from database
+        instagram: "sample_user",
+        discord: "user#1234"
     });
     const [editedSocialInfo, setEditedSocialInfo] = useState(socialInfo);
-    const [isDataLoading, setIsDataLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchUserData = async () => {
-            if (!user) return;
-    
-            try {
-                const response = await fetch(`/api/check-user?userId=${user.sub}`);
-                const { data } = await response.json();
-    
-                if (user?.sub && data?.results && data.results[user.sub]) {
-                    const userData = data.results[user.sub];
-                    const fullText = userData.text || '';
-                    const answerMap: { [key: number]: string } = {};
-                    
-                    questions.forEach((q) => {
-                        const questionStart = fullText.indexOf(`Question: ${q.question}`);
-                        if (questionStart !== -1) {
-                            const answerStart = fullText.indexOf('Answer: ', questionStart) + 8;
-                            const answerEnd = fullText.indexOf('Question: ', answerStart);
-                            const answer = answerEnd === -1 
-                                ? fullText.slice(answerStart).trim()
-                                : fullText.slice(answerStart, answerEnd).trim();
-                            answerMap[q.id] = answer;
-                        }
-                    });
-    
-                    setAnswers(answerMap);
-                    setEditedAnswers(answerMap);
-    
-                    // Extract username from full Instagram URL
-                    const instagramUsername = userData.social1
-                        ? userData.social1.replace('https://www.instagram.com/', '')
-                        : '';
-    
-                    setSocialInfo({
-                        instagram: instagramUsername,
-                        discord: userData.social2 || ''
-                    });
-                    setEditedSocialInfo({
-                        instagram: instagramUsername,
-                        discord: userData.social2 || ''
-                    });
-                }
-            } catch (error) {
-                console.error('Error fetching user data:', error);
-            } finally {
-                setIsDataLoading(false);
-            }
-        };
-    
-        fetchUserData();
-    }, [user]);
-    
-
-    if (checkUserLoading || authLoading || isDataLoading) return <LoadingScreen />;
-    if (error) return <div>{error.message}</div>;
-    if (!user) {
-        router.push('/');
-        return null;
-    }
 
     const handleEdit = () => {
         setIsEditing(true);
@@ -129,193 +61,151 @@ export default function ProfilePage() {
         }));
     };
 
-    const handleSocialChange = (field: 'instagram' | 'discord', value: string) => {
+    const handleSocialChange = (platform: string, value: string) => {
         setEditedSocialInfo(prev => ({
             ...prev,
-            [field]: value
+            [platform]: value
         }));
     };
 
-
-    
-const handleSubmit = async () => {
-    try {
-        const fullText = questions.map((q) => {
-            return `Question: ${q.question} Answer: ${editedAnswers[q.id] || ''}`
-        }).join(' ');
-
-        const formData = {
-            user_id: user.sub,
-            name: user.name,
-            email: user.email,
-            text: fullText,
-            social1: `https://www.instagram.com/${editedSocialInfo.instagram}`, // Full Instagram URL
-            social2: editedSocialInfo.discord
-        };
-
-        const response = await fetch('/api/submit-survey', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formData),
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to update profile');
+    const handleSave = async () => {
+        try {
+            // Here you would normally save to your backend
+            console.log('Saving profile data...');
+            
+            setAnswers(editedAnswers);
+            setSocialInfo(editedSocialInfo);
+            setIsEditing(false);
+            
+            alert('Profile updated successfully!');
+        } catch (error) {
+            console.error('Error saving profile:', error);
+            alert('Error saving profile. Please try again.');
         }
-
-        setAnswers(editedAnswers);
-        setSocialInfo(editedSocialInfo);
-        setIsEditing(false);
-    } catch (error) {
-        console.error('Error updating profile:', error);
-        // You might want to show an error message to the user here
-    }
-};
+    };
 
     const handleCancel = () => {
+        setEditedAnswers({...answers});
+        setEditedSocialInfo({...socialInfo});
         setIsEditing(false);
-        setEditedAnswers(answers);
-        setEditedSocialInfo(socialInfo);
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6">
-            <div className="max-w-4xl lg:max-w-6xl mx-auto">
-                <div className="bg-white rounded-xl shadow-sm p-6 lg:p-10">
-                    {/* Go Back Button */}
-                    <div className="mb-6">
-                        <button
-                            onClick={() => router.push('/home')}
-                            className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 
-                            transition-colors duration-200 group"
-                        >
-                            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-200" />
-                            <span className="font-medium">Go Back</span>
-                        </button>
-                    </div>
+        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-800">
+            <div className="container mx-auto px-4 py-8">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-8">
+                    <button
+                        onClick={() => router.push('/home')}
+                        className="flex items-center gap-2 text-white hover:text-gray-200 transition-colors"
+                    >
+                        <ArrowLeft size={20} />
+                        Back to Home
+                    </button>
+                </div>
 
-                    {/* User Profile Section */}
-                    <div className="flex flex-col items-center text-center pb-8">
-                        {user.picture && (
-                            <Image
-                                src={user.picture}
-                                alt="Profile"
-                                width={80}
-                                height={80}
-                                className="rounded-full ring-2 ring-gray-100 shadow-sm mb-4"
-                            />
-                        )}
+                {/* Profile Card */}
+                <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+                    <div className="flex items-center gap-6 mb-8">
+                        <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                            AU
+                        </div>
                         <div>
-                            <h1 className="text-2xl font-semibold text-gray-800">{user.name}</h1>
-                            <p className="text-gray-500 mt-1">{user.email}</p>
+                            <h1 className="text-2xl font-semibold text-gray-800">Anonymous User</h1>
+                            <p className="text-gray-600">anonymous@example.com</p>
                         </div>
                     </div>
 
-                    {/* Social Media Section - New */}
-                    <div className="mb-8 border-b border-gray-100 pb-8">
-                        <div className="flex justify-between items-center mb-8">
-                            <h2 className="text-xl font-semibold text-gray-800">Your Information</h2>
-                            {!isEditing && (
-                                <button
-                                    onClick={handleEdit}
-                                    className="px-4 py-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 
-                                    transition-colors duration-200 font-medium text-sm"
-                                >
-                                    Edit Profile
-                                </button>
-                            )}
-                        </div>
-                        <div className="space-y-4">
-                            {/* Instagram Field */}
-                            <div className="space-y-2">
-                                <label className="text-gray-700 font-medium">Instagram</label>
-                                <div className="flex items-center space-x-2">
-                                    <span className="text-gray-500">instagram.com/</span>
-                                    {isEditing ? (
-                                        <input
-                                            type="text"
-                                            value={editedSocialInfo.instagram}
-                                            onChange={(e) => handleSocialChange('instagram', e.target.value)}
-                                            className="flex-1 p-2 border border-gray-200 rounded-lg 
-                                            focus:ring-2 focus:ring-blue-100 focus:border-blue-400 
-                                            outline-none transition-all duration-200 text-gray-700"
-                                            placeholder="username"
-                                        />
-                                    ) : (
-                                        <span className="text-gray-600">{socialInfo.instagram}</span>
-                                    )}
-                                </div>
+                    {/* Social Media Links */}
+                    <div className="mb-8">
+                        <h2 className="text-xl font-semibold text-gray-800 mb-4">Social Media</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Instagram Username
+                                </label>
+                                {isEditing ? (
+                                    <input
+                                        type="text"
+                                        value={editedSocialInfo.instagram}
+                                        onChange={(e) => handleSocialChange('instagram', e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="your_username"
+                                    />
+                                ) : (
+                                    <p className="text-gray-800">@{socialInfo.instagram}</p>
+                                )}
                             </div>
-
-                            {/* Discord Field */}
-                            <div className="space-y-2">
-                                <label className="text-gray-700 font-medium">Discord ID</label>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Discord Username
+                                </label>
                                 {isEditing ? (
                                     <input
                                         type="text"
                                         value={editedSocialInfo.discord}
                                         onChange={(e) => handleSocialChange('discord', e.target.value)}
-                                        className="w-full p-2 border border-gray-200 rounded-lg 
-                                        focus:ring-2 focus:ring-blue-100 focus:border-blue-400 
-                                        outline-none transition-all duration-200 text-gray-700"
-                                        placeholder="username#0000"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="username#1234"
                                     />
                                 ) : (
-                                    <p className="text-gray-600">{socialInfo.discord}</p>
+                                    <p className="text-gray-800">{socialInfo.discord}</p>
                                 )}
                             </div>
                         </div>
                     </div>
 
-                    {/* Survey Answers Section */}
-                    <div>
-                        <div className="space-y-8">
-                            {questions.map((q) => (
-                                <div key={q.id} className="space-y-3">
-                                    <h3 className="text-gray-700 font-medium">
-                                        {q.question}
+                    {/* Survey Answers */}
+                    <div className="mb-8">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-semibold text-gray-800">Survey Responses</h2>
+                            {!isEditing ? (
+                                <button
+                                    onClick={handleEdit}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                                >
+                                    Edit Profile
+                                </button>
+                            ) : (
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={handleSave}
+                                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                                    >
+                                        Save Changes
+                                    </button>
+                                    <button
+                                        onClick={handleCancel}
+                                        className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="space-y-6">
+                            {questions.map((question) => (
+                                <div key={question.id} className="border-b border-gray-200 pb-6">
+                                    <h3 className="text-lg font-medium text-gray-800 mb-3">
+                                        {question.question}
                                     </h3>
                                     {isEditing ? (
                                         <textarea
-                                            value={editedAnswers[q.id] || ""}
-                                            onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                                            className="w-full p-4 border border-gray-200 rounded-lg 
-                                            min-h-[120px] focus:ring-2 focus:ring-blue-100 focus:border-blue-400 
-                                            outline-none transition-all duration-200 text-gray-700 text-sm"
+                                            value={editedAnswers[question.id] || ''}
+                                            onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-vertical"
+                                            rows={4}
                                             placeholder="Enter your answer..."
                                         />
                                     ) : (
-                                        <p className="text-gray-600 bg-gray-50 p-4 rounded-lg text-sm">
-                                            {answers[q.id] || "[Answer not available]"}
+                                        <p className="text-gray-700 leading-relaxed">
+                                            {answers[question.id] || 'No answer provided'}
                                         </p>
                                     )}
-                                    <div className="border-b border-gray-100 pt-4"></div>
                                 </div>
                             ))}
                         </div>
-
-                        
-                        {/* Questions and Answers remain the same */}
-                        {isEditing && (
-                            <div className="mt-8 flex justify-center space-x-4">
-                                <button
-                                    onClick={handleSubmit}
-                                    className="px-6 py-2.5 rounded-lg bg-blue-600 text-white 
-                                    hover:bg-blue-700 transition-colors duration-200 font-medium"
-                                >
-                                    Save Changes
-                                </button>
-                                <button
-                                    onClick={handleCancel}
-                                    className="px-6 py-2.5 rounded-lg bg-gray-100 text-gray-700 
-                                    hover:bg-gray-200 transition-colors duration-200 font-medium"
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>

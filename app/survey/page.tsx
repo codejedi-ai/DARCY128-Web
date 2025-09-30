@@ -1,14 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
-import { useUser } from "@auth0/nextjs-auth0/client"
-import Image from 'next/image'
+
 import { useRouter } from 'next/navigation'
-import LoadingScreen from '../components/loadingScreen'
+
 import dynamic from 'next/dynamic';
 
 const DynamicVantaBackground = dynamic(() => import('../components/VantageBackground'), {
@@ -76,48 +75,15 @@ hover: {
 };
 
 export default function SurveyForm() {
-    const { user, error, isLoading } = useUser();
     const router = useRouter();
     const [currentQuestion, setCurrentQuestion] = useState(0)
     const [answers, setAnswers] = useState<{ [key: number]: string }>({})
     const [direction, setDirection] = useState(0)
-    const [showLogout, setShowLogout] = useState(false)
+
     const [socialMedia, setSocialMedia] = useState({
         instagram: '',
         discord: ''
     });
-
-    useEffect(() => {
-        const checkUser = async () => {
-          if (!user) return;
-    
-          try {
-            const response = await fetch(`/api/check-user?userId=${user.sub}`);
-            const data = await response.json();
-            console.log(data);
-            if (data.exists && Object.keys(data.data.results).length !== 0) { 
-                router.push('/home');
-            }
-          } catch (error) {
-            console.error('Error checking user:', error);
-          }
-        };
-    
-        if (!isLoading) {
-          checkUser();
-        }
-      }, [user, isLoading, router]);
-
-    if (isLoading) return <LoadingScreen />;
-    if (error) return <div>{error.message}</div>;
-    if (!user) {
-        router.push('/');
-        return null;
-    }
-
-    const handleLogout = () => {
-        window.location.href = `/api/auth/logout`;
-    };
 
     const handleNext = () => {
         if (currentQuestion < questions.length - 1) {
@@ -155,9 +121,9 @@ export default function SurveyForm() {
           }).filter(text => text).join(' ');
       
           const formData = {
-            user_id: user.sub,
-            name: user.name,
-            email: user.email,
+            user_id: 'anonymous',
+            name: 'Anonymous User',
+            email: 'anonymous@example.com',
             text: fullText,
             social1: `https://www.instagram.com/${socialMedia.instagram}`,
             social2: socialMedia.discord
@@ -201,28 +167,7 @@ export default function SurveyForm() {
             <div className="w-full max-w-2xl mx-auto mb-6  p-4">
                 <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <div className="relative">
-                    {user.picture && (
-                        <Image
-                        src={user.picture}
-                        width={60}
-                        height={60}
-                        alt="Profile"
-                        className="rounded-full cursor-pointer"
-                        onClick={() => setShowLogout(!showLogout)}
-                        />
-                    )}
-                    {showLogout && (
-                        <Button
-                        variant="outline"
-                        className="absolute mt-1 left-0 right-0 z-10 shadow-lg"
-                        onClick={handleLogout}
-                        >
-                            Logout
-                        </Button>
-                    )}
-                    </div>
-                        <h1 className="text-2xl font-bold text-white">Welcome, {user.name}!</h1>
+                        <h1 className="text-2xl font-bold text-white">Welcome to the Survey!</h1>
                     </div>
                 </div>
             </div>

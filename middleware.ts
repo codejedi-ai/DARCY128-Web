@@ -1,12 +1,4 @@
-import { withMiddlewareAuthRequired } from '@auth0/nextjs-auth0/edge';
-
-export default withMiddlewareAuthRequired();
-
+// Middleware removed - no authentication needed
 export const config = {
-  matcher: [
-    '/api/submit-survey',
-    '/home',
-    '/survey',
-    '/profile' 
-  ]
+  matcher: []
 };

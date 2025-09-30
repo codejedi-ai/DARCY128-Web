@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Plot from "react-plotly.js";
 import { RotateCw } from 'lucide-react';
-import { useUser } from "@auth0/nextjs-auth0/client";
 import Image from 'next/image';
-import emailIcon from '@/public/email.png';
-import instagramIcon from '@/public/instagram.png';
-import discordIcon from '@/public/discord.png';
 
 
 interface UserData {
@@ -25,7 +21,6 @@ interface PlotLayout {
 }
 
 const ScatterChartComponent = () => {
-  const {user} = useUser();
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [data, setData] = useState<UserData[]>([]);
   const [key, setKey] = useState(0);
@@ -40,7 +35,7 @@ const ScatterChartComponent = () => {
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/fetch-users?userId=${user?.sub}`);
+      const response = await fetch(`/api/fetch-users?userId=anonymous`);
       const fetchedData = await response.json();
       console.log('Fetched data:', fetchedData);
       setData(fetchedData);
@@ -161,12 +156,7 @@ const ScatterChartComponent = () => {
             marker: {
               size: 40,
               color: Array.isArray(data)
-                ? data.map((d) => {
-                    const currentUserEmail = user?.email;
-                    return d?.email === currentUserEmail 
-                      ? "rgba(66, 248, 26, 0.8)"  // Green color for current user
-                      : "rgba(0, 255, 255, 0.6)"    // Default color for others
-                  })
+                ? data.map(() => "rgba(0, 255, 255, 0.6)")    // Default color for all users
                 : [],
               symbol: "circle",
               line: {
@@ -175,10 +165,7 @@ const ScatterChartComponent = () => {
               },
             },
             text: Array.isArray(data) 
-              ? data.map((d) => {
-                  const currentUserEmail = user?.email;
-                  return d?.email === currentUserEmail ? "👽" : "🌟"
-                })
+              ? data.map(() => "🌟")
               : [],
               textfont: {
                 size: 20,  // Increase this number to make the text bigger
@@ -254,7 +241,7 @@ const ScatterChartComponent = () => {
               <div className="space-y-3">
                 <div className="flex items-center space-x-3 text-gray-300">
                   <Image 
-                    src={emailIcon}
+                    src="/email.png"
                     alt="Email"
                     width={24}
                     height={24}
@@ -269,7 +256,7 @@ const ScatterChartComponent = () => {
 
                 <div className="flex items-center space-x-3 text-gray-300">
                   <Image 
-                    src={instagramIcon}
+                    src="/instagram.png"
                     alt="Instagram"
                     width={24}
                     height={24}
@@ -286,7 +273,7 @@ const ScatterChartComponent = () => {
 
                 <div className="flex items-center space-x-3 text-gray-300">
                   <Image 
-                    src={discordIcon}
+                    src="/discord.png"
                     alt="Discord"
                     width={24}
                     height={24}
