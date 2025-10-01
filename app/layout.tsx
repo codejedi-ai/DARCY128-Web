@@ -2,10 +2,18 @@
 // import type { Metadata } from "next";
 import { Geist, Azeret_Mono as Geist_Mono } from 'next/font/google';
 import "./globals.css";
-import { AudioButton } from "./components/audio-button";
+import { AudioButton } from "@/components/audio-button";
+import Navbar from "@/components/Navbar";
+import Sidebar from "@/components/Sidebar";
 import Link from 'next/link';
 import { MessageCircle } from 'lucide-react';
-import { usePathname } from 'next/navigation'
+import { usePathname } from 'next/navigation';
+import dynamic from 'next/dynamic';
+import { ROUTES } from '@/lib/routes';
+
+const DynamicVantaBackground = dynamic(() => import('@/components/VantageBackground'), {
+  ssr: false
+});
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,24 +36,36 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const pathname = usePathname()
-  const isChatroom = pathname === '/chat'
+  const isHomePage = pathname === ROUTES.HOME
 
   return (
     <html lang="en">
       <head>
       </head>
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-          <AudioButton />
-          {children}
-          {!isChatroom && (
-            <Link 
-              href="/chat" 
-              className="fixed bottom-4 right-4 p-2 bg-white rounded-full shadow-lg hover:bg-gray-200 transition-colors duration-200"
-              aria-label="Go to Chatroom"
-            >
-              <MessageCircle className="w-6 h-6 text-black" />
-            </Link>
-          )}
+          <DynamicVantaBackground>
+            {isHomePage ? (
+              <>
+                <Navbar />
+                <AudioButton />
+                {children}
+                <Link 
+                  href={ROUTES.CHAT} 
+                  className="fixed bottom-4 right-4 p-2 bg-white rounded-full shadow-lg hover:bg-gray-200 transition-colors duration-200"
+                  aria-label="Go to Chatroom"
+                >
+                  <MessageCircle className="w-6 h-6 text-black" />
+                </Link>
+              </>
+            ) : (
+              <>
+                <Sidebar />
+                <div className="ml-64 lg:ml-64">
+                  {children}
+                </div>
+              </>
+            )}
+          </DynamicVantaBackground>
         </body>
     </html>
   );

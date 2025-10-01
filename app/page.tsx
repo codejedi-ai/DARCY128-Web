@@ -4,10 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@auth0/nextjs-auth0';
 
-const DynamicVantaBackground = dynamic(() => import('./components/VantageBackground'), {
-  ssr: false
-});
 
 const smoothTransition = {
   type: "tween",
@@ -17,18 +16,25 @@ const smoothTransition = {
 
 export default function Home() {
   const [stage, setStage] = useState(0);
+  const { user, isLoading } = useUser();
+  const router = useRouter();
 
   useEffect(() => {
+    // Redirect logged-in users to profile page
+    if (!isLoading && user) {
+      router.push('/profile');
+      return;
+    }
+
     const timer1 = setTimeout(() => setStage(1), 2000)
     const timer2 = setTimeout(() => setStage(2), 4000)
     return () => {
       clearTimeout(timer1)
       clearTimeout(timer2)
     }
-  }, []);
+  }, [user, isLoading, router]);
 
   return (
-    <DynamicVantaBackground>
     <div className="flex flex-col items-center justify-center min-h-screen text-white overflow-hidden">
       <motion.div 
         layout
@@ -61,15 +67,14 @@ export default function Home() {
             >
               <div className='flex flex-col items-center gap-8'>
                 Perceptr
-                <a href="/auth/login">Login</a>
-                <Link href="/auth/login">
+                <Link href="/chat">
                   <Button 
                     variant="outline" 
                     size="lg"
                     className="text-lg px-6 py-3 rounded-full bg-white text-black hover:bg-gray-200 transition-all duration-300 ease-in-out transform hover:scale-105"
                     onClick={() => {
                       try {
-                        const audio = new Audio('/uofthacks_st.mp3'); // Note the absolute path from public directory
+                        const audio = new Audio('/claire.mp3'); // Note the absolute path from public directory
                         audio.play().catch(error => {
                           console.error('Audio playback failed:', error);
                         });
@@ -78,7 +83,7 @@ export default function Home() {
                       }
                     }}
                   >
-                    Let&apos;s get started
+                    Start AI Conversation
                   </Button>
                 </Link>
               </div>
@@ -87,6 +92,5 @@ export default function Home() {
         </AnimatePresence>
       </motion.div>
     </div>
-    </DynamicVantaBackground>
   );
 }

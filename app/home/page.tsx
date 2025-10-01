@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import ClientScatter from '@/app/components/clientScatter'
+import ClientScatter from '@/components/clientScatter'
 
 export default function HomePage() {
   const router = useRouter();
