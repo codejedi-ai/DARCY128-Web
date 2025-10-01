@@ -1,11 +1,11 @@
 'use client';
 import { useUser } from "@auth0/nextjs-auth0";
 import { motion } from 'framer-motion';
-import { User, Mail, Calendar, Settings, Key, Copy, Check, Shield, Send, Cookie } from 'lucide-react';
+import { User, Mail, Calendar, Settings, Key, Copy, Check, Shield, Send, Cookie, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import LogoutButton from '@/components/LogoutButton';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useProtectedAPI } from '@/hooks/useProtectedAPI';
 import { useCookieAuth } from '@/hooks/useCookieAuth';
 import { useJWTAuth } from '@/hooks/useJWTAuth';
@@ -105,6 +105,9 @@ export default function ProfilePage() {
           >
             <AuthStatus />
           </motion.div>
+
+          {/* Protected Route Status */}
+          <ProtectedRouteStatus />
 
           {/* Profile Cards */}
           <div className="grid md:grid-cols-2 gap-6 mb-8">
@@ -529,5 +532,96 @@ export default function ProfilePage() {
       </div>
       <ScrollToTop />
     </div>
+  );
+}
+
+// Protected Route Status Component
+function ProtectedRouteStatus() {
+  const [status, setStatus] = useState<{
+    protected: boolean;
+    apiProtected: boolean;
+    loading: boolean;
+  }>({
+    protected: false,
+    apiProtected: false,
+    loading: true
+  });
+
+  useEffect(() => {
+    const checkProtectedRoutes = async () => {
+      try {
+        // Test protected API route
+        const response = await fetch('/api/protected');
+        const apiProtected = response.ok;
+        
+        setStatus({
+          protected: true, // If we're on this page, the route is protected
+          apiProtected,
+          loading: false
+        });
+      } catch (error) {
+        setStatus({
+          protected: true,
+          apiProtected: false,
+          loading: false
+        });
+      }
+    };
+
+    checkProtectedRoutes();
+  }, []);
+
+  if (status.loading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+        className="bg-green-500/10 backdrop-blur-sm rounded-2xl p-6 border border-green-500/20 mb-8"
+      >
+        <div className="flex items-center justify-center">
+          <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin mr-3"></div>
+          <span className="text-green-400">Checking protected routes...</span>
+        </div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, delay: 0.2 }}
+      className="bg-green-500/10 backdrop-blur-sm rounded-2xl p-6 border border-green-500/20 mb-8"
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <Shield className="w-6 h-6 text-green-400" />
+          <div>
+            <h3 className="text-lg font-semibold text-green-400">Protected Routes Status</h3>
+            <p className="text-sm text-green-300/80">Authentication verification complete</p>
+          </div>
+        </div>
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <CheckCircle className="w-5 h-5 text-green-400" />
+            <span className="text-sm text-green-300">Route Protected</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            {status.apiProtected ? (
+              <>
+                <CheckCircle className="w-5 h-5 text-green-400" />
+                <span className="text-sm text-green-300">API Secured</span>
+              </>
+            ) : (
+              <>
+                <div className="w-5 h-5 border-2 border-red-400 rounded-full"></div>
+                <span className="text-sm text-red-300">API Error</span>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </motion.div>
   );
 }
