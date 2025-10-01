@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Mic, MicOff, Play, Pause, Square, Brain, Heart, Users, Lightbulb, Volume2 } from 'lucide-react'
 import { useUser } from '@auth0/nextjs-auth0'
 import React from 'react'
+import ScrollToTop from '@/components/ScrollToTop'
 
 interface ConversationInsight {
   id: string
@@ -191,7 +192,7 @@ export default function VoiceAgentPage() {
   }
 
   return (
-      <div className="min-h-screen text-white px-4">
+      <div className="min-h-screen text-white pt-8 px-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <motion.div
@@ -410,6 +411,7 @@ export default function VoiceAgentPage() {
           </div>
         </motion.div>
       </div>
+      <ScrollToTop />
     </div>
   )
 }

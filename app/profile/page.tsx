@@ -1,13 +1,48 @@
 'use client';
 import { useUser } from "@auth0/nextjs-auth0";
 import { motion } from 'framer-motion';
-import { User, Mail, Calendar, Settings } from 'lucide-react';
+import { User, Mail, Calendar, Settings, Key, Copy, Check, Shield, Send, Cookie } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import LogoutButton from '@/components/LogoutButton';
+import { useState } from 'react';
+import { useProtectedAPI } from '@/hooks/useProtectedAPI';
+import { useCookieAuth } from '@/hooks/useCookieAuth';
+import { useJWTAuth } from '@/hooks/useJWTAuth';
+import { useAuthenticatedAPI } from '@/hooks/useAuthenticatedAPI';
+import AuthStatus from '@/components/AuthStatus';
+import ScrollToTop from '@/components/ScrollToTop';
 
 export default function ProfilePage() {
   const { user, isLoading } = useUser();
+  const [copiedToken, setCopiedToken] = useState(false);
+  const { data: apiData, loading: apiLoading, error: apiError, fetchProtectedData, sendData } = useProtectedAPI();
+  const { 
+    data: cookieData, 
+    loading: cookieLoading, 
+    error: cookieError, 
+    testAuth, 
+    testProtectedGET, 
+    testProtectedPOST, 
+    clearResults 
+  } = useCookieAuth();
+  const { 
+    data: jwtData, 
+    loading: jwtLoading, 
+    error: jwtError, 
+    testUserData, 
+    testAdminEndpoint, 
+    sendDataToProtected, 
+    clearResults: clearJWTResults 
+  } = useJWTAuth();
+  const { 
+    data: authData, 
+    loading: authLoading, 
+    error: authError, 
+    checkUser, 
+    fetchUsers, 
+    clearResults: clearAuthResults 
+  } = useAuthenticatedAPI();
 
   if (isLoading) {
     return (
@@ -38,7 +73,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen text-white pt-8 px-4">
-        <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto">
           {/* Profile Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -59,6 +94,16 @@ export default function ProfilePage() {
             </div>
             <h1 className="text-4xl font-bold mb-2">{user.name || 'User'}</h1>
             <p className="text-xl text-white/80">{user.email}</p>
+          </motion.div>
+
+          {/* Authentication Status */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="mb-8"
+          >
+            <AuthStatus />
           </motion.div>
 
           {/* Profile Cards */}
@@ -99,6 +144,7 @@ export default function ProfilePage() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
+
               className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20"
             >
               <h3 className="text-xl font-semibold mb-4 flex items-center">
@@ -121,6 +167,351 @@ export default function ProfilePage() {
             </motion.div>
           </div>
 
+          {/* JWT Token Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 mb-8"
+          >
+            <h3 className="text-xl font-semibold mb-4 flex items-center">
+              <Key className="w-5 h-5 mr-2" />
+              JWT Token Information
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">Access Token</label>
+                <div className="relative">
+                  <textarea
+                    value={user?.accessToken || 'No token available'}
+                    readOnly
+                    className="w-full p-3 bg-black/20 border border-white/20 rounded text-white text-xs font-mono resize-none h-24 overflow-auto focus:outline-none focus:ring-2 focus:ring-white/20"
+                    placeholder="JWT Token will appear here..."
+                  />
+                  <Button
+                    onClick={() => {
+                      if (user?.accessToken) {
+                        navigator.clipboard.writeText(user.accessToken);
+                        setCopiedToken(true);
+                        setTimeout(() => setCopiedToken(false), 2000);
+                      }
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="absolute top-2 right-2 text-white border-white/30 hover:bg-white/10"
+                  >
+                    {copiedToken ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-white mb-2">Token Type</label>
+                  <div className="p-2 bg-black/20 border border-white/20 rounded text-white/80 text-sm">
+                    {user?.tokenType || 'Bearer'}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-white mb-2">Expires At</label>
+                  <div className="p-2 bg-black/20 border border-white/20 rounded text-white/80 text-sm">
+                    {user?.expiresAt ? new Date(user.expiresAt).toLocaleString() : 'Unknown'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+                <p className="text-yellow-200 text-sm">
+                  <strong>Note:</strong> This token is sensitive information. Keep it secure and don't share it with unauthorized parties.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Cookie Authentication Testing Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.7 }}
+            className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 mb-8"
+          >
+            <h3 className="text-xl font-semibold mb-4 flex items-center">
+              <Cookie className="w-5 h-5 mr-2" />
+              Cookie Authentication Testing
+            </h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Button
+                  onClick={testAuth}
+                  disabled={cookieLoading}
+                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  {cookieLoading ? 'Loading...' : 'Test Auth Status'}
+                </Button>
+                <Button
+                  onClick={testProtectedGET}
+                  disabled={cookieLoading}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {cookieLoading ? 'Loading...' : 'Test Protected GET'}
+                </Button>
+                <Button
+                  onClick={testProtectedPOST}
+                  disabled={cookieLoading}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  {cookieLoading ? 'Loading...' : 'Test Protected POST'}
+                </Button>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <div className="text-sm text-white/60">
+                  Test your cookie-based authentication with the backend
+                </div>
+                <Button
+                  onClick={clearResults}
+                  variant="outline"
+                  size="sm"
+                  className="text-white border-white/30 hover:bg-white/10"
+                >
+                  Clear Results
+                </Button>
+              </div>
+
+              {cookieError && (
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                  <p className="text-red-200 text-sm">
+                    <strong>Error:</strong> {cookieError}
+                  </p>
+                </div>
+              )}
+
+              {cookieData && (
+                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+                  <h4 className="text-green-200 font-medium mb-2">Cookie Auth Response:</h4>
+                  <pre className="text-green-200 text-xs overflow-auto max-h-64">
+                    {JSON.stringify(cookieData, null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                <p className="text-blue-200 text-sm">
+                  <strong>How Cookie Auth Works:</strong> Your browser automatically sends the <code>auth0_session</code> cookie 
+                  with each request. The backend verifies this cookie to authenticate you. No manual token handling needed!
+                </p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* JWT Authentication Testing Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.8 }}
+            className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 mb-8"
+          >
+            <h3 className="text-xl font-semibold mb-4 flex items-center">
+              <Key className="w-5 h-5 mr-2" />
+              JWT Authentication Testing
+            </h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Button
+                  onClick={testUserData}
+                  disabled={jwtLoading}
+                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  {jwtLoading ? 'Loading...' : 'Test User Data'}
+                </Button>
+                <Button
+                  onClick={testAdminEndpoint}
+                  disabled={jwtLoading}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  {jwtLoading ? 'Loading...' : 'Test Admin Access'}
+                </Button>
+                <Button
+                  onClick={() => sendDataToProtected({ 
+                    message: 'Hello from JWT auth!', 
+                    timestamp: new Date().toISOString(),
+                    userId: user?.sub 
+                  })}
+                  disabled={jwtLoading}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  {jwtLoading ? 'Loading...' : 'Send Data'}
+                </Button>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <div className="text-sm text-white/60">
+                  Test JWT-based authentication with Auth0 verification
+                </div>
+                <Button
+                  onClick={clearJWTResults}
+                  variant="outline"
+                  size="sm"
+                  className="text-white border-white/30 hover:bg-white/10"
+                >
+                  Clear Results
+                </Button>
+              </div>
+
+              {jwtError && (
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                  <p className="text-red-200 text-sm">
+                    <strong>Error:</strong> {jwtError}
+                  </p>
+                </div>
+              )}
+
+              {jwtData && (
+                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+                  <h4 className="text-green-200 font-medium mb-2">JWT Auth Response:</h4>
+                  <pre className="text-green-200 text-xs overflow-auto max-h-64">
+                    {JSON.stringify(jwtData, null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                <p className="text-blue-200 text-sm">
+                  <strong>JWT Authentication:</strong> These endpoints require a valid Auth0 JWT token in the Authorization header. 
+                  The backend verifies the token signature and extracts user information for secure access control.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Authenticated API Testing Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.9 }}
+            className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 mb-8"
+          >
+            <h3 className="text-xl font-semibold mb-4 flex items-center">
+              <Shield className="w-5 h-5 mr-2" />
+              Authenticated API Testing
+            </h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Button
+                  onClick={() => checkUser('test-user-123')}
+                  disabled={authLoading}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {authLoading ? 'Loading...' : 'Check User'}
+                </Button>
+                <Button
+                  onClick={() => fetchUsers('test-user-123')}
+                  disabled={authLoading}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  {authLoading ? 'Loading...' : 'Fetch Users'}
+                </Button>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <div className="text-sm text-white/60">
+                  Test your existing API endpoints with JWT authentication
+                </div>
+                <Button
+                  onClick={clearAuthResults}
+                  variant="outline"
+                  size="sm"
+                  className="text-white border-white/30 hover:bg-white/10"
+                >
+                  Clear Results
+                </Button>
+              </div>
+
+              {authError && (
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                  <p className="text-red-200 text-sm">
+                    <strong>Error:</strong> {authError}
+                  </p>
+                </div>
+              )}
+
+              {authData && (
+                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+                  <h4 className="text-green-200 font-medium mb-2">Authenticated API Response:</h4>
+                  <pre className="text-green-200 text-xs overflow-auto max-h-64">
+                    {JSON.stringify(authData, null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                <p className="text-blue-200 text-sm">
+                  <strong>Your API Endpoints:</strong> These are your existing <code>/api/check-user</code> and 
+                  <code>/api/fetch-users</code> endpoints, now protected with JWT authentication. 
+                  The backend verifies the Auth0 token before processing requests.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* API Testing Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.8 }}
+            className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 mb-8"
+          >
+            <h3 className="text-xl font-semibold mb-4 flex items-center">
+              <Shield className="w-5 h-5 mr-2" />
+              Test Protected API
+            </h3>
+            <div className="space-y-4">
+              <div className="flex space-x-4">
+                <Button
+                  onClick={fetchProtectedData}
+                  disabled={apiLoading}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {apiLoading ? 'Loading...' : 'Test GET Request'}
+                </Button>
+                <Button
+                  onClick={() => sendData({ message: 'Hello from frontend!', timestamp: new Date().toISOString() })}
+                  disabled={apiLoading}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Test POST Request
+                </Button>
+              </div>
+
+              {apiError && (
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                  <p className="text-red-200 text-sm">
+                    <strong>Error:</strong> {apiError}
+                  </p>
+                </div>
+              )}
+
+              {apiData && (
+                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+                  <h4 className="text-green-200 font-medium mb-2">API Response:</h4>
+                  <pre className="text-green-200 text-xs overflow-auto">
+                    {JSON.stringify(apiData, null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                <p className="text-blue-200 text-sm">
+                  <strong>How it works:</strong> These buttons test your JWT token by making authenticated requests to protected API endpoints. 
+                  The token from your Auth0 session is automatically included in the Authorization header.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+
           {/* Debug Info (only in development) */}
           {process.env.NODE_ENV === 'development' && (
             <motion.div
@@ -135,7 +526,8 @@ export default function ProfilePage() {
               </pre>
             </motion.div>
           )}
-        </div>
       </div>
+      <ScrollToTop />
+    </div>
   );
 }

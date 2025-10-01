@@ -1,61 +1,101 @@
-"use client";
+'use client';
 import { useUser } from '@auth0/nextjs-auth0';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Brain, LogIn } from 'lucide-react';
-import Link from 'next/link';
+import { Shield, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ROUTES } from '@/lib/routes';
+import Link from 'next/link';
 
 interface AuthGuardProps {
   children: React.ReactNode;
   fallback?: React.ReactNode;
+  redirectTo?: string;
+  requireAuth?: boolean;
 }
 
-export default function AuthGuard({ children, fallback }: AuthGuardProps) {
+export default function AuthGuard({ 
+  children, 
+  fallback, 
+  redirectTo = '/auth/login',
+  requireAuth = true 
+}: AuthGuardProps) {
   const { user, isLoading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (requireAuth && !user) {
+        router.push(redirectTo);
+      } else if (!requireAuth && user) {
+        // If user is logged in but this page doesn't require auth, redirect to profile
+        router.push('/profile');
+      }
+    }
+  }, [user, isLoading, router, redirectTo, requireAuth]);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-white">
+      <div className="flex items-center justify-center min-h-screen text-white">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-xl">Loading...</p>
+          <p className="text-xl">Checking authentication...</p>
         </div>
       </div>
     );
   }
 
-  if (!user) {
+  // If authentication is required but user is not logged in
+  if (requireAuth && !user) {
     if (fallback) {
       return <>{fallback}</>;
     }
 
     return (
-      <div className="min-h-screen flex items-center justify-center text-white">
+      <div className="flex items-center justify-center min-h-screen text-white">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center max-w-md mx-auto px-4"
+          className="text-center max-w-md mx-auto"
         >
-          <div className="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-sm border border-white/20">
-            <Brain className="w-12 h-12 text-white" />
+          <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Shield className="w-10 h-10 text-red-400" />
           </div>
-          
-          <h1 className="text-3xl font-bold mb-4">Access Required</h1>
-          <p className="text-lg text-gray-300 mb-8">
-            Please log in to access this feature. Perceptr helps you master the art of small talk and build meaningful connections.
+          <h1 className="text-3xl font-bold mb-4">Access Denied</h1>
+          <p className="text-xl text-white/80 mb-8">
+            You need to be logged in to access this page.
           </p>
-          
-          <Link href={ROUTES.LOGIN}>
+          <Link href={redirectTo}>
             <Button className="bg-white text-black hover:bg-gray-200 px-8 py-3">
-              <LogIn className="w-5 h-5 mr-2" />
-              Login to Continue
+              Go to Login
             </Button>
           </Link>
-          
-          <div className="mt-8 text-sm text-gray-400">
-            <p>New to Perceptr? Sign up to get started!</p>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // If user is logged in but this page doesn't require auth
+  if (!requireAuth && user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-white">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center max-w-md mx-auto"
+        >
+          <div className="w-20 h-20 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <AlertTriangle className="w-10 h-10 text-blue-400" />
           </div>
+          <h1 className="text-3xl font-bold mb-4">Already Logged In</h1>
+          <p className="text-xl text-white/80 mb-8">
+            You're already logged in. Redirecting to your profile...
+          </p>
+          <Link href="/profile">
+            <Button className="bg-white text-black hover:bg-gray-200 px-8 py-3">
+              Go to Profile
+            </Button>
+          </Link>
         </motion.div>
       </div>
     );

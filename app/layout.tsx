@@ -10,6 +10,7 @@ import { MessageCircle } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { ROUTES } from '@/lib/routes';
+import ScrollProgress from '@/components/ScrollProgress';
 
 const DynamicVantaBackground = dynamic(() => import('@/components/VantageBackground'), {
   ssr: false
@@ -43,6 +44,7 @@ export default function RootLayout({
       <head>
       </head>
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+          <ScrollProgress />
           <DynamicVantaBackground>
             {isHomePage ? (
               <>

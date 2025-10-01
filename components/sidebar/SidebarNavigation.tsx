@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { 
-  Home, 
   MessageCircle, 
   User, 
   BarChart3
@@ -8,7 +7,6 @@ import {
 
 export default function SidebarNavigation() {
   const menuItems = [
-    { href: '/', icon: Home, label: 'Home' },
     { href: '/chat', icon: MessageCircle, label: 'AI Chat' },
     { href: '/profile', icon: User, label: 'Profile' },
     { href: '/survey', icon: BarChart3, label: 'Survey' },

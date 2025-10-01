@@ -14,7 +14,7 @@ export default function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-md border-b border-white/10">
       <div className="flex items-center justify-between px-6 py-4">
         {/* Logo on the left */}
-        <Link href={ROUTES.HOME} className="flex items-center space-x-2">
+        <Link href={ROUTES.PROFILE} className="flex items-center space-x-2">
           <Image
             src="/favicon.ico"
             alt="Perceptr Logo"

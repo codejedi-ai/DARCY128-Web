@@ -7,6 +7,7 @@ import { Plus, MessageSquare, Calendar, User, Edit2, Trash2, Save, X } from 'luc
 import { Button } from '@/components/ui/button'
 import ChatMessage from '@/components/ChatMessage'
 import MessageInput from '@/components/MessageInput'
+import ScrollToTop from '@/components/ScrollToTop'
 
 interface Conversation {
   id: string
@@ -135,7 +136,7 @@ export default function Chatroom() {
   }
 
   return (
-    <div className="flex h-screen text-white">
+    <div className="flex h-screen text-white pt-8">
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
         {currentConversation ? (
@@ -208,6 +209,7 @@ export default function Chatroom() {
           </div>
         )}
       </div>
+      <ScrollToTop />
     </div>
   )
 }
